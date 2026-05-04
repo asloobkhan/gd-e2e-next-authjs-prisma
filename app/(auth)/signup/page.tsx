@@ -73,7 +73,7 @@ export default function SignupPage() {
           type="button"
           onClick={() => setEmailVerified(true)}
           disabled={emailVerified}
-          style={buttonStyle}
+          style={secondaryButton}
         >
           {emailVerified ? '✓ Email verified (demo)' : 'Verify email (demo)'}
         </button>
@@ -93,7 +93,7 @@ export default function SignupPage() {
           <input name="name" required style={inputStyle} />
         </label>
 
-        <button type="submit" disabled={submitting || !emailVerified} style={buttonStyle}>
+        <button type="submit" disabled={submitting || !emailVerified} style={primaryButton}>
           {submitting ? 'Creating account…' : 'Create account'}
         </button>
 
@@ -105,7 +105,7 @@ export default function SignupPage() {
       <button
         type="button"
         onClick={() => signIn('google', { callbackUrl: '/' })}
-        style={buttonStyle}
+        style={primaryButton}
       >
         Continue with Google
       </button>
@@ -126,10 +126,24 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 4,
 };
 
-const buttonStyle: React.CSSProperties = {
+const primaryButton: React.CSSProperties = {
   padding: '10px 12px',
-  border: '1px solid #333',
+  border: '1px solid #111',
   borderRadius: 4,
-  background: '#fafafa',
+  background: '#111',
+  color: '#fff',
   cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
+};
+
+const secondaryButton: React.CSSProperties = {
+  padding: '10px 12px',
+  border: '1px solid #111',
+  borderRadius: 4,
+  background: '#fff',
+  color: '#111',
+  cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
 };

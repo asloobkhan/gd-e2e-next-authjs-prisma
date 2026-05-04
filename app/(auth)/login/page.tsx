@@ -45,7 +45,7 @@ export default function LoginPage() {
           Password
           <input name="password" type="password" required style={inputStyle} />
         </label>
-        <button type="submit" disabled={submitting} style={buttonStyle}>
+        <button type="submit" disabled={submitting} style={primaryButton}>
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
         {error && <p style={{ color: 'crimson', margin: 0 }}>{error}</p>}
@@ -56,7 +56,7 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={() => signIn('google', { callbackUrl })}
-        style={buttonStyle}
+        style={primaryButton}
       >
         Continue with Google
       </button>
@@ -77,10 +77,13 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 4,
 };
 
-const buttonStyle: React.CSSProperties = {
+const primaryButton: React.CSSProperties = {
   padding: '10px 12px',
-  border: '1px solid #333',
+  border: '1px solid #111',
   borderRadius: 4,
-  background: '#fafafa',
+  background: '#111',
+  color: '#fff',
   cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
 };

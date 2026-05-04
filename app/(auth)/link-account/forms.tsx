@@ -43,7 +43,7 @@ export function LinkAlreadySignedIn(props: BaseProps) {
         Link <strong>{props.provider}</strong> ({props.email}) to your existing
         account?
       </p>
-      <button onClick={onConfirm} disabled={submitting} style={buttonStyle}>
+      <button onClick={onConfirm} disabled={submitting} style={primaryButton}>
         {submitting ? 'Linking…' : 'Confirm and link'}
       </button>
       {error && <p style={{ color: 'crimson' }}>{error}</p>}
@@ -117,7 +117,7 @@ export function LinkWithPasswordForm(props: BaseProps & { hasPassword: boolean }
             style={inputStyle}
           />
         </label>
-        <button type="submit" disabled={submitting} style={buttonStyle}>
+        <button type="submit" disabled={submitting} style={primaryButton}>
           {submitting ? 'Linking…' : 'Confirm and link'}
         </button>
         {error && <p style={{ color: 'crimson', margin: 0 }}>{error}</p>}
@@ -141,10 +141,13 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 4,
 };
 
-const buttonStyle: React.CSSProperties = {
+const primaryButton: React.CSSProperties = {
   padding: '10px 12px',
-  border: '1px solid #333',
+  border: '1px solid #111',
   borderRadius: 4,
-  background: '#fafafa',
+  background: '#111',
+  color: '#fff',
   cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
 };

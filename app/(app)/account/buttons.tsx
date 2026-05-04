@@ -67,16 +67,22 @@ export function DisconnectButton({
 
 const primaryButton: React.CSSProperties = {
   padding: '10px 12px',
-  border: '1px solid #333',
+  border: '1px solid #111',
   borderRadius: 4,
-  background: '#fafafa',
+  background: '#111',
+  color: '#fff',
   cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
 };
 
 const secondaryButton: React.CSSProperties = {
   padding: '6px 10px',
-  border: '1px solid #999',
+  border: '1px solid #111',
   borderRadius: 4,
-  background: 'white',
+  background: '#fff',
+  color: '#111',
   cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 500,
 };
