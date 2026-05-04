@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/current-user';
+import { providerType } from '@/lib/auth/provider-types';
 
 export type LinkResult =
   | { ok: true }
@@ -47,7 +48,7 @@ export async function linkOAuthToCurrentUser(input: unknown): Promise<LinkResult
       userId: user.id,
       provider: data.provider,
       providerAccountId: data.providerAccountId,
-      type: 'oauth',
+      type: providerType(data.provider),
     },
   });
   return { ok: true };
@@ -87,7 +88,7 @@ export async function linkOAuthWithPassword(input: unknown): Promise<LinkResult>
       userId: user.id,
       provider: data.provider,
       providerAccountId: data.providerAccountId,
-      type: 'oauth',
+      type: providerType(data.provider),
     },
   });
   return { ok: true };
