@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Revocable Auth Boilerplate
 
-## Getting Started
+Next.js 16 + Auth.js v5 + Prisma + Postgres, with Credentials and Google OAuth on a single revocable session model.
 
-First, run the development server:
+> Detailed architecture write-ups will be added after the boilerplate stabilizes. This README is just the local boot guide.
+
+## Local setup
+
+### Prerequisites
+- Node.js 20+
+- Yarn (Classic 1.x is fine)
+- Docker (for the local Postgres)
+
+### Steps
 
 ```bash
-npm run dev
-# or
+# 1) Start Postgres in the background
+docker compose up -d
+
+# 2) Copy the env template and adjust if needed
+cp .env.example .env
+
+# 3) Install dependencies (Prisma client is generated via postinstall)
+yarn
+
+# 4) Apply schema and create initial migration
+yarn db:migrate
+
+# 5) Seed a demo user (optional — creates demo@example.com / demopass1)
+yarn db:seed
+
+# 6) Run the dev server
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000> — you'll be redirected to `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo credentials
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+After running `yarn db:seed`:
 
-## Learn More
+- **Email**: `demo@example.com`
+- **Password**: `demopass1`
 
-To learn more about Next.js, take a look at the following resources:
+### Google OAuth (optional)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Without `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.env`, the "Continue with Google" buttons will fail to round-trip. To enable:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Create OAuth credentials at <https://console.cloud.google.com/apis/credentials>
+2. Add `http://localhost:3000/api/auth/callback/google` as an authorized redirect URI
+3. Paste the client id/secret into `.env` and restart `yarn dev`
 
-## Deploy on Vercel
+## Useful scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | What it does |
+|---|---|
+| `yarn dev` | Run the dev server |
+| `yarn build` | Production build |
+| `yarn db:migrate` | Apply pending Prisma migrations (dev) |
+| `yarn db:reset` | Drop & recreate the schema, re-seed |
+| `yarn db:studio` | Launch Prisma Studio at <http://localhost:5555> |
+| `yarn db:seed` | Re-run the seed script |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Force-logout demo
+
+In dev only:
+
+```bash
+# Wipe all sessions for a user
+curl -X DELETE http://localhost:3000/api/admin/sessions \
+     -H 'content-type: application/json' \
+     -d '{"userId":"<USER_ID>"}'
+```
+
+Or directly in Postgres:
+
+```sql
+DELETE FROM "Session" WHERE "userId" = '<USER_ID>';
+```
+
+The next request from that user gets a fresh redirect to `/login`.
