@@ -30,7 +30,7 @@
 이 보일러플레이트는 그 문제를 해결합니다.
 
 - **모든 세션이 DB row 1개에 1:1 대응**
-- **강제 로그아웃 = `DELETE FROM "Session" WHERE ...` 한 줄**
+- **강제 로그아웃 = `DELETE FROM sessions WHERE ...` 한 줄**
 - 그러면서도 표준 Auth.js의 자동화 흐름(adapter, 콜백, 라우트 핸들러)을 거의 그대로 사용
 - Credentials와 OAuth가 **동일한 세션 형식**을 공유 (쿠키 값, 갱신 로직, 만료 정책 모두 통일)
 
@@ -64,13 +64,13 @@ Auth.js v5의 `database` strategy를 사용합니다. 모든 세션은 `Session`
 ```
 Cookie: authjs.session-token=8f3a...uuid...
                                 ↓ adapter.getSessionAndUser() lookup
-Postgres "Session" row → 인증 통과
+Postgres sessions row → 인증 통과
 ```
 
 운영자는 다음 한 줄로 즉시 로그아웃을 강제할 수 있습니다.
 
 ```sql
-DELETE FROM "Session" WHERE "userId" = '...';
+DELETE FROM sessions WHERE user_id = '...';
 ```
 
 다음 요청부터 그 사용자는 인증 실패 → 자동으로 `/login`으로 리다이렉트됩니다.
@@ -173,57 +173,70 @@ OAuth 로그인 시 `signIn` 콜백이 다음 3분기를 처리합니다.
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified DateTime? @map("email_verified")
   name          String?
   image         String?
-  password      String?            // OAuth 단독 가입자는 NULL
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  password      String?                            // OAuth 단독 가입자는 NULL
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
   accounts      Account[]
   sessions      Session[]
+
+  @@map("users")
 }
 
 model Account {
-  userId            String
-  type              String         // 'credentials' | 'oidc' | 'oauth'
-  provider          String         // 'credentials' | 'google' | ...
-  providerAccountId String
+  userId            String   @map("user_id")
+  type              String                          // 'credentials' | 'oidc' | 'oauth'
+  provider          String                          // 'credentials' | 'google' | ...
+  providerAccountId String   @map("provider_account_id")
   // OAuth 토큰 컬럼들 (현재 항상 NULL — 부록 A 참조)
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?  @db.Text
   session_state     String?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime @default(now()) @map("created_at")
   user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
-  @@unique([userId, provider])     // 한 유저당 같은 provider 1개만
-  @@map("account_providers")        // 의미 강조용 별칭
+  @@unique([userId, provider])                     // 한 유저당 같은 provider 1개만
+  @@map("account_providers")
 }
 
 model Session {
-  sessionToken   String   @id      // 쿠키 값과 동일
-  userId         String
-  expires        DateTime          // 절대 만료 (30일)
-  lastActivityAt DateTime @default(now())   // sliding window 시드
+  sessionToken   String   @id              @map("session_token")  // 쿠키 값과 동일
+  userId         String                    @map("user_id")
+  expires        DateTime                                          // 절대 만료 (30일)
+  lastActivityAt DateTime @default(now())  @map("last_activity_at") // sliding window 시드
   user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
+  @@map("sessions")
 }
 
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 ```
 
 표준 Auth.js adapter 스키마와 호환됩니다. 두 가지만 확장:
 - **`Session.lastActivityAt`** — sliding window용
 - **`Account @@unique([userId, provider])`** — 같은 provider 중복 연결 차단
+
+### 네이밍 규칙
+
+- **Prisma 모델/필드명**은 Auth.js adapter contract가 요구하는 형태(`User`, `userId`, `providerAccountId` 등)를 그대로 따릅니다 — 못 바꿉니다
+- **DB 테이블/컬럼명**은 `@@map` / `@map`으로 일괄 snake_case 매핑 (`users`, `user_id`, `provider_account_id`)
+- 따라서 raw SQL은 따옴표 없이 `SELECT * FROM users WHERE email = ...`처럼 쓸 수 있고, TypeScript 코드는 `prisma.user.findUnique({ where: { email } })` 그대로 유지됩니다
+- OAuth 토큰 필드들(`access_token`, `refresh_token`, ...)은 OAuth 2.0 RFC 표준명이 곧 snake_case라 양쪽 다 동일 — `@map` 불필요
 
 ---
 
@@ -366,13 +379,13 @@ yarn dev
 
 ```sql
 -- 특정 유저의 모든 세션 무효화
-DELETE FROM "Session" WHERE "userId" = '<USER_ID>';
+DELETE FROM sessions WHERE user_id = '<USER_ID>';
 
 -- 특정 세션 1개만
-DELETE FROM "Session" WHERE "sessionToken" = '<TOKEN>';
+DELETE FROM sessions WHERE session_token = '<TOKEN>';
 
 -- 만료된 세션 일괄 정리 (cron 권장)
-DELETE FROM "Session" WHERE "expires" < NOW();
+DELETE FROM sessions WHERE expires < NOW();
 ```
 
 ### 데모용 admin route (개발 환경 전용)
