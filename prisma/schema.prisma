@@ -2,6 +2,14 @@
 // Models follow the Auth.js adapter contract, with two intentional extensions:
 //   - Session.lastActivityAt  — sliding window expiry
 //   - Account @@unique([userId, provider]) — one method per type, per user
+//
+// Naming convention:
+//   - Prisma model + field names follow Auth.js's required shape
+//     (PascalCase models, camelCase fields, snake_case OAuth tokens).
+//   - DB tables and columns are uniformly snake_case via @@map / @map
+//     so raw SQL stays unquoted and matches typical Postgres practice.
+//   - The token fields (refresh_token, access_token, ...) keep their
+//     OAuth 2.0 RFC names in BOTH layers so no @map is needed there.
 
 generator client {
   provider = "prisma-client-js"
@@ -15,22 +23,24 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified DateTime? @map("email_verified")
   name          String?
   image         String?
   password      String?   // null for OAuth-only accounts
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
 
   accounts Account[]
   sessions Session[]
+
+  @@map("users")
 }
 
 model Account {
-  userId            String
+  userId            String   @map("user_id")
   type              String
   provider          String
-  providerAccountId String
+  providerAccountId String   @map("provider_account_id")
   refresh_token     String?  @db.Text
   access_token      String?  @db.Text
   expires_at        Int?
@@ -38,7 +48,7 @@ model Account {
   scope             String?
   id_token          String?  @db.Text
   session_state     String?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -48,14 +58,15 @@ model Account {
 }
 
 model Session {
-  sessionToken   String   @id
-  userId         String
+  sessionToken   String   @id              @map("session_token")
+  userId         String                    @map("user_id")
   expires        DateTime
-  lastActivityAt DateTime @default(now())
+  lastActivityAt DateTime @default(now())  @map("last_activity_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -64,4 +75,5 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@map("verification_tokens")
 }
