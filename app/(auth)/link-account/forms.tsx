@@ -52,7 +52,6 @@ export function LinkAlreadySignedIn(props: BaseProps) {
 }
 
 export function LinkWithPasswordForm(props: BaseProps & { hasPassword: boolean }) {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
