@@ -1,0 +1,1 @@
+{ "crons": [ { "path": "/api/auth/session", "schedule": "*/30 * * * *" } ] }
